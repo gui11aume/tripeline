@@ -1,1 +1,3 @@
 TRiP pipeline.
+
+gem-mapper -I /mnt/shared/seq/gem/dm3R5/dm3R5_pT2_unmasked.gem -i fastafile.fa -T4 -m4
