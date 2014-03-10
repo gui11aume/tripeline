@@ -5,6 +5,7 @@ import sys
 
 from itertools import izip
 from gzopen import gzopen
+from math import sqrt
 
 # Params.
 min_brcd = 15
@@ -15,13 +16,20 @@ shift = len(transposon)
 
 # FASTQ params
 Q0 = 33 # '!' represents the lowest quality
+QM = 74 # 'J' maximum quality
+norm = 1000/float(QM-Q0)
 
 def substr(string, start, length):
    return string[start:start+length]
 
 def score_from_quality(qstring):
-   '''Output the 5-th smallest quality value.'''
-   return ord(sorted(qstring)[4]) - Q0
+   # Geometric mean of the 4 smallest values
+   q = 1
+   for num in sorted(qstring)[:4]:
+      q *= ord(num) - Q0
+   return int(sqrt(sqrt(q))*norm)
+
+
 
 def main(fastq1, fastq2):
    with gzopen(fastq1) as f, gzopen(fastq2) as g:
