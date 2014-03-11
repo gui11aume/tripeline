@@ -14,16 +14,16 @@ min_genome = 15
 transposon = 'TTCAACTGTA'
 shift = len(transposon)
 
-# FASTQ params
-Q0 = 33 # '!' represents the lowest quality
-QM = 74 # 'J' maximum quality
+# FASTQ params.
+Q0 = 33 # '!' represents the lowest quality.
+QM = 74 # 'J' maximum quality.
 norm = 1000/float(QM-Q0)
 
 def substr(string, start, length):
    return string[start:start+length]
 
 def score_from_quality(qstring):
-   # Geometric mean of the 4 smallest values
+   # Geometric mean of the 4 smallest values.
    q = 1
    for num in sorted(qstring)[:4]:
       q *= ord(num) - Q0
@@ -33,7 +33,7 @@ def score_from_quality(qstring):
 
 def main(fastq1, fastq2):
    with gzopen(fastq1) as f, gzopen(fastq2) as g:
-      # Aggregate iterator of f,g iterators -> izip(f,g)
+      # Aggregate iterator of f,g iterators -> izip(f,g).
       for lineno,(line1,line2) in enumerate(izip(f,g)):
          # Take only sequence and quality on lines 1 and 3 (mod 4).
          modulo = lineno % 4
@@ -47,7 +47,7 @@ def main(fastq1, fastq2):
             try:
                gpos = line2.index(transposon) + shift
             except ValueError:
-               continue 
+               continue
             # Select the region from the end of the transposon to
             # the first "CATG", if any.
             genome = line2[gpos:].split('CATG')[0].rstrip()

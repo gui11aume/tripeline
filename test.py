@@ -9,7 +9,7 @@ class TestPreprocess(unittest.TestCase):
    def test_score(self):
       qual = "C@@FFFFFDFFBFH@GHIGCGHICFEHBEHGDDHGIGIGIIGCDDGHFHII" \
              "FAEAAG>@EEHG9AAA;);;7;(.6;;=@B6;B-9@BB8AA<:A@CCAA"
-      self.assertEqual(preprocess.score_from_quality(qual), 21)
+      self.assertEqual(preprocess.score_from_quality(qual), 235)
 
    def test_susbtr(self):
       string = '123456789'
