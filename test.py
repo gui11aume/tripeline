@@ -4,6 +4,27 @@
 import unittest
 import preprocess
 
+from automata import PatternMatcher
+
+class TestPartialMatcher(unittest.TestCase):
+   def test_(self):
+      transposon = PatternMatcher('TGTATGTAAACTTCCGACTTCAACTGTA', 3)
+      seq1 = 'TGTATGTAAACTTCCGACTTCAACTGTA'
+      self.assertEqual(transposon.start(seq1), 0)
+      self.assertEqual(transposon.end(seq1), 27)
+      seq2 = 'TGTATGTAAACTTCCGACTTCAACTGTAx'
+      self.assertEqual(transposon.start(seq2), 0)
+      self.assertEqual(transposon.end(seq2), 27)
+      seq3 = 'xTGTATGTAAACTTCCGACTTCAACTGTA'
+      self.assertEqual(transposon.start(seq3), 1)
+      self.assertEqual(transposon.end(seq3), 28)
+      seq4 = 'TGTATGTAAACTTCCGxACTTCAACTGTA'
+      self.assertEqual(transposon.start(seq4), 0)
+      self.assertEqual(transposon.end(seq4), 28)
+      seq5 = 'TAAGGTGTATGTAAACTTCCGACTTCAACTGTAGATCCCACAGCGATATCGACGTGA'
+      self.assertEqual(transposon.start(seq5), 5)
+      self.assertEqual(transposon.end(seq5), 32)
+
 class TestPreprocess(unittest.TestCase):
 
    def test_score(self):
