@@ -265,7 +265,7 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
                items = line.split('\t')
                array = ['0'] * N
                array[i] = items[1]
-               outf.write('%s\tspike\t*\t*\t0\t' % items[0])
+               outf.write('%s\tspike\t*\t0\t0\t' % items[0])
                outf.write('\t'.join(array) + '\n')
 
    return
