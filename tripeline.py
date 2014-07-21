@@ -33,7 +33,7 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    TRANSPOSON = PatternMatcher('TGTATGTAAACTTCCGACTTCAACTGTA', 3)
 
    # Open a file to write
-   fname_fasta = re.sub(r'fastq(\.gz)?', 'fasta', fname_iPCR_PE1)
+   fname_fasta = re.sub(r'read[1-2].fastq(\.gz)?', 'iPCR_fasta',fname_iPCR_PE1)
    # Substitution failed, append '.fasta' to avoid name collision.
    if fname_fasta == fname_iPCR_PE1:
       fname_fasta = fname_iPCR_PE1 + '.fasta'
