@@ -117,13 +117,12 @@ def call_starcode_on_mapped_file(fname_gem_mapped):
 
 
 def call_starcode_on_fastq_file(fname_fastq):
-   """Some info."""
-
+   ''' Extracts the gDNA,cDNA reads and spikes and runs stracode on them.'''
    MIN_BRCD = 15
    MAX_BRCD = 25
 
    brcd_outfname = re.sub(r'\.fastq.*', '_starcode.txt', fname_fastq)
-   spk_outfname = re.sub(r'\.fastq.*', 'spikes_starcode.txt', fname_fastq)
+   spk_outfname = re.sub(r'\.fastq.*', '_spikes_starcode.txt', fname_fastq)
    if brcd_outfname == fname_fastq:
       brcd_outfname = fname_fastq + '_starcode.txt'
    if spk_outfname == fname_fastq:
