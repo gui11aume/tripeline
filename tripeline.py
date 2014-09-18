@@ -14,6 +14,7 @@ from itertools import izip
 from math import sqrt
 from vtrack import vheader
 
+LOGFNAME = tripelog.txt
 
 ########  Mapping Pipeline ###############################################
 
@@ -247,9 +248,14 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
 
    with open(fname_insertions_table, 'w') as outf:
       outf.write(vheader(*sys.argv))
+      unmapped = 0
+      mapped = 0
       for brcd in sorted(integrations, key=integrations.get):
          (chrom,pos,strand),total = integrations[brcd]
-         if chrom not in KEEP: continue
+         if chrom not in KEEP:
+            unmapped += 1
+            continue
+         mapped += 1
          outf.write('%s\t%s\t%s\t%d\t%d' % (brcd,chrom,strand,pos,total))
          for fname,ignore in args:
             outf.write('\t' + str(reads[fname][brcd]))
@@ -267,6 +273,9 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
                outf.write('%s\tspike\t*\t0\t0\t' % items[0])
                outf.write('\t'.join(array) + '\n')
 
+   with open(LOGFNAME, 'a') as f:
+      f.write('%s: mapped:%d, unmapped%d\n' \
+            % (fname_gem_mapped, mapped, unmapped))
    return
    # Done.
    
