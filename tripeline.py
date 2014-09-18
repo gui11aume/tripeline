@@ -14,7 +14,7 @@ from itertools import izip
 from math import sqrt
 from vtrack import vheader
 
-LOGFNAME = tripelog.txt
+LOGFNAME = 'tripelog.txt'
 
 ########  Mapping Pipeline ###############################################
 
