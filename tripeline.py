@@ -14,7 +14,7 @@ from itertools import izip
 from math import sqrt
 from vtrack import vheader
 
-LOGFNAME = tripelog.txt
+LOGFNAME = 'tripelog.txt'
 
 ########  Mapping Pipeline ###############################################
 
@@ -274,7 +274,7 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
                outf.write('\t'.join(array) + '\n')
 
    with open(LOGFNAME, 'a') as f:
-      f.write('%s: mapped:%d, unmapped%d\n' \
+      f.write('%s: mapped:%d, unmapped:%d\n' \
             % (fname_gem_mapped, mapped, unmapped))
    return
    # Done.
