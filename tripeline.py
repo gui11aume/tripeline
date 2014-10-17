@@ -216,15 +216,17 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
    with open(fname_gem_mapped) as f:
       for line in f:
          items = line.split()
-         try:
-            barcode = canonical[re.sub(r':[^:]+$', '', items[0])]
-         except KeyError:
-            continue
+         #try:
+         #   barcode = canonical[re.sub(r':[^:]+$', '', items[0])]
+         #except KeyError:
+         #   continue
          if items[3] == '-':
             position = ('', 0)
          else:
             pos = items[3].split(':')
-            position = (pos[0], int(pos[2]), pos[1])
+            loc = int(pos[2]) if pos[1] == '+' else \
+                  int(pos[2]) + len(items[1])
+            position = (pos[0], loc, pos[1])
             counts[barcode][position] += 1
       
    integrations = dict()
