@@ -186,7 +186,11 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
    counts the frequency that each barcode is found in the mapped data
    even for the non-mapping barcodes."""
 
-   KEEP = ('2L', '2R', '3L', '3R', '4', 'X','pT2')
+   KEEP = (
+      '2L', '2LHet', '2R', '2RHet', '3L', '3LHet',
+      '3R', '3RHet', '4', 'X', 'XHet', 'U', 'Uextra',
+      'dmel_mitochondrion_genome', 'pT2',
+   )
 
    fname_insertions_table = re.sub(r'\.map', '_insertions.txt',
           fname_gem_mapped)
