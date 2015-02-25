@@ -104,11 +104,17 @@ def call_starcode_on_mapped_file(fname_gem_mapped):
    if os.path.exists(fname_starcode): return fname_starcode
 
    # Create a pipe to make use of the `cut` command and pipe
-   # it to starcode.
+   # it to starcode (git commit d4f63bd0cc5355d...).
    p1 = subprocess.Popen(['cut', '-f1', fname_gem_mapped],
          stdout=subprocess.PIPE)
-   p2 = subprocess.Popen(['starcode','-t4','-d2','-o', fname_starcode],
-         stdin=p1.stdout, stdout=subprocess.PIPE)
+   p2 = subprocess.Popen([
+      'starcode',
+      '-t4',
+      '-d2',
+      '-o',
+      '--print-clusters',
+      fname_starcode],
+      stdin=p1.stdout, stdout=subprocess.PIPE)
    # 'communicate()' returns a tuple '(stdoutdata, stderrdata)'.
    # If 'stderrdata' is not None we notify to know where the problem arose.
    stdoutdata,stderrdata = p2.communicate()
@@ -231,7 +237,7 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
             loc = int(pos[2]) if pos[1] == '+' else \
                   int(pos[2]) + len(items[1])
             position = (pos[0], loc, pos[1])
-            counts[barcode][position] += 1
+         counts[barcode][position] += 1
       
    integrations = dict()
    for brcd,hist in counts.items():
