@@ -34,7 +34,7 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    TRANSPOSON = PatternMatcher('TGTATGTAAACTTCCGACTTCAACTGTA', 3)
 
    # Open a file to write
-   fname_fasta = re.sub(r'read[1-2].fastq(\.gz)?', 'iPCR_fasta',fname_iPCR_PE1)
+   fname_fasta = re.sub(r'read[1-2].fastq(\.gz)?', 'iPCR.fasta',fname_iPCR_PE1)
    # Substitution failed, append '.fasta' to avoid name collision.
    if fname_fasta == fname_iPCR_PE1:
       fname_fasta = fname_iPCR_PE1 + '.fasta'
@@ -42,6 +42,9 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    # Skip if file exists.
    if os.path.exists(fname_fasta): return fname_fasta
     
+   # Verbose information.
+   sys.stderr.write('processing %s\n' % fname_fasta)
+
    with gzopen(fname_iPCR_PE1) as f, gzopen(fname_iPCR_PE2) as g, \
       open(fname_fasta, 'w') as outf:
       # Aggregate iterator of f,g iterators -> izip(f,g).
@@ -61,24 +64,28 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
          genome = line2[(gpos+1):].split('CATG')[0].rstrip()
          if len(genome) < MIN_GENOME: continue
          outf.write('>%s\n%s\n' % (brcd,genome))
+
    return fname_fasta
 
 
 def call_gem_mapper_on_fasta_file(fname_fasta):
-    """This function takes the barcodes and sequence extracted from the
-    PE sequencing files and calls gem to do the mapping with up to 3
-    mismatches and using 4 threads to align."""
+   """This function takes the barcodes and sequence extracted from the
+   PE sequencing files and calls gem to do the mapping with up to 3
+   mismatches and using 4 threads to align."""
 
-    INDEX = '/mnt/shared/seq/gem/dm3R5/dm3R5_pT2_unmasked.gem'
+   INDEX = '/mnt/shared/seq/gem/dm3R5/dm3R5_pT2_unmasked.gem'
 
-    outfname = re.sub('\.fasta$', '', fname_fasta)
+   outfname = re.sub('\.fasta$', '', fname_fasta)
 
-    # Skip if file exists.
-    if os.path.exists(outfname + '.map'): return outfname + '.map'
+   # Skip if file exists.
+   if os.path.exists(outfname + '.map'): return outfname + '.map'
 
-    # TODO: specify version info for `gem-mapper`.
-    # System call to `gem-mapper` passing the desired arguments.
-    subprocess.call([
+   # Verbose information.
+   sys.stderr.write('processing %s\n' % outfname)
+    
+   # TODO: specify version info for `gem-mapper`.
+   # System call to `gem-mapper` passing the desired arguments.
+   subprocess.call([
        'gem-mapper',
        '-I', INDEX ,
        '-i', fname_fasta,
@@ -86,9 +93,9 @@ def call_gem_mapper_on_fasta_file(fname_fasta):
        '-m3',
        '-T4',
        '--unique-mapping',
-    ])
-    # gem-mapper adds `.map` to the output file.
-    return outfname + '.map'
+   ])
+   # gem-mapper adds `.map` to the output file.
+   return outfname + '.map'
     
 
 def call_starcode_on_mapped_file(fname_gem_mapped):
@@ -102,6 +109,9 @@ def call_starcode_on_mapped_file(fname_gem_mapped):
 
    # Skip if file exists.
    if os.path.exists(fname_starcode): return fname_starcode
+
+   # Verbose information.
+   sys.stderr.write('processing %s\n' % fname_starcode)
 
    # Create a pipe to make use of the `cut` command and pipe
    # it to starcode (git commit d4f63bd0cc5355d...).
@@ -137,6 +147,10 @@ def call_starcode_on_fastq_file(fname_fastq):
 
    if os.path.exists(brcd_outfname) and os.path.exists(spk_outfname):
       return (brcd_outfname, spk_outfname)
+
+   # Verbose information.
+   sys.stderr.write('processing %s and %s\n' % \
+         (brcd_outfname, spk_outfname))
 
    GFP = PatternMatcher('CATGCTAGTTGTGGTTTGTCCAAACT', 3)
    SPIKE = PatternMatcher('CATGATTACCCTGTTATC', 2)
@@ -192,11 +206,11 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
    counts the frequency that each barcode is found in the mapped data
    even for the non-mapping barcodes."""
 
-   KEEP = (
+   KEEP = frozenset([
       '2L', '2LHet', '2R', '2RHet', '3L', '3LHet',
       '3R', '3RHet', '4', 'X', 'XHet', 'U', 'Uextra',
       'dmel_mitochondrion_genome', 'pT2',
-   )
+   ])
 
    fname_insertions_table = re.sub(r'\.map', '_insertions.txt',
           fname_gem_mapped)
@@ -206,6 +220,9 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
 
    # Skip if file exists.
    if os.path.exists(fname_insertions_table): return
+
+   # Verbose information.
+   sys.stderr.write('processing %s\n' % fname_insertions_table)
 
    def dist(intlist):
       intlist.sort()
@@ -227,7 +244,7 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
       for line in f:
          items = line.split()
          try:
-            barcode = canonical[re.sub(r':[^:]+$', '', items[0])]
+            barcode = canonical[items[0]]
          except KeyError:
             continue
          if items[3] == '-':
@@ -263,8 +280,10 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
       unmapped = 0
       mapped = 0
       for brcd in sorted(integrations, key=integrations.get):
-         (chrom,pos,strand),total = integrations[brcd]
-         if chrom not in KEEP:
+         try:
+            (chrom,pos,strand),total = integrations[brcd]
+            if chrom not in KEEP: raise ValueError
+         except ValueError:
             unmapped += 1
             continue
          mapped += 1
