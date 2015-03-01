@@ -7,12 +7,14 @@ import subprocess
 import sys
 import tempfile
 
+
 from automata import PatternMatcher
 from collections import defaultdict
 from gzopen import gzopen
 from itertools import izip
 from math import sqrt
 from vtrack import vheader
+
 
 LOGFNAME = 'tripelog.txt'
 
@@ -43,7 +45,7 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    if os.path.exists(fname_fasta): return fname_fasta
     
    # Verbose information.
-   sys.stderr.write('processing %s\n' % fname_fasta)
+   sys.stderr.write('Extracting reads from %s\n' % fname_fasta)
 
    with gzopen(fname_iPCR_PE1) as f, gzopen(fname_iPCR_PE2) as g, \
       open(fname_fasta, 'w') as outf:
@@ -81,7 +83,7 @@ def call_gem_mapper_on_fasta_file(fname_fasta):
    if os.path.exists(outfname + '.map'): return outfname + '.map'
 
    # Verbose information.
-   sys.stderr.write('processing %s\n' % outfname)
+   sys.stderr.write('Mapping %s\n' % outfname)
     
    # TODO: specify version info for `gem-mapper`.
    # System call to `gem-mapper` passing the desired arguments.
@@ -98,31 +100,31 @@ def call_gem_mapper_on_fasta_file(fname_fasta):
    return outfname + '.map'
     
 
-def call_starcode_on_mapped_file(fname_gem_mapped):
+def call_starcode_on_mapped_file(fname_mapped):
    """This function takes the barcodes contained in the first column of
    the mapped file and feed's them to starcode that clusters them."""
 
-   fname_starcode = re.sub(r'\.map$', '_starcode.txt', fname_gem_mapped)
+   fname_starcode = re.sub(r'\.map$', '_starcode.txt', fname_mapped)
    # Substitution failed, append '_starcode.txt' to avoid name collision.
-   if fname_gem_mapped == fname_starcode:
-      fname_starcode = fname_gem_mapped + '_starcode.txt'
+   if fname_mapped == fname_starcode:
+      fname_starcode = fname_mapped + '_starcode.txt'
 
    # Skip if file exists.
    if os.path.exists(fname_starcode): return fname_starcode
 
    # Verbose information.
-   sys.stderr.write('processing %s\n' % fname_starcode)
+   sys.stderr.write('Starcoding iPCR file: %s\n' % fname_starcode)
 
    # Create a pipe to make use of the `cut` command and pipe
    # it to starcode (git commit d4f63bd0cc5355d...).
-   p1 = subprocess.Popen(['cut', '-f1', fname_gem_mapped],
+   p1 = subprocess.Popen(['cut', '-f1', fname_mapped],
          stdout=subprocess.PIPE)
    p2 = subprocess.Popen([
       'starcode',
       '-t4',
       '-d2',
-      '-o',
       '--print-clusters',
+      '-o',
       fname_starcode],
       stdin=p1.stdout, stdout=subprocess.PIPE)
    # 'communicate()' returns a tuple '(stdoutdata, stderrdata)'.
@@ -149,7 +151,7 @@ def call_starcode_on_fastq_file(fname_fastq):
       return (brcd_outfname, spk_outfname)
 
    # Verbose information.
-   sys.stderr.write('processing %s and %s\n' % \
+   sys.stderr.write('Starcoding %s and %s\n' % \
          (brcd_outfname, spk_outfname))
 
    GFP = PatternMatcher('CATGCTAGTTGTGGTTTGTCCAAACT', 3)
@@ -199,7 +201,7 @@ def call_starcode_on_fastq_file(fname_fastq):
    return (brcd_outfname, spk_outfname)
 
 
-def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
+def collect_integrations(fname_starcode_out, fname_mapped, *args):
    """This function reads the stacode output and changes all the barcodes
    mapped by their canonicals while it calculates the mapped distance
    rejecting multiple mapping integrations or unmmaped ones. It also
@@ -213,10 +215,10 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
    ])
 
    fname_insertions_table = re.sub(r'\.map', '_insertions.txt',
-          fname_gem_mapped)
+          fname_mapped)
    # Substitution failed, append '_insertions.txt' to avoid name conflict.
-   if fname_insertions_table == fname_gem_mapped:
-       fname_insertions_table = fname_gem_mapped + '_insertions.txt'
+   if fname_insertions_table == fname_mapped:
+       fname_insertions_table = fname_mapped + '_insertions.txt'
 
    # Skip if file exists.
    if os.path.exists(fname_insertions_table): return
@@ -240,7 +242,7 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
             canonical[brcd] = items[0]
 
    counts = defaultdict(lambda: defaultdict(int))
-   with open(fname_gem_mapped) as f:
+   with open(fname_mapped) as f:
       for line in f:
          items = line.split()
          try:
@@ -306,7 +308,7 @@ def collect_integrations(fname_starcode_out, fname_gem_mapped, *args):
 
    with open(LOGFNAME, 'a') as f:
       f.write('%s: mapped:%d, unmapped:%d\n' \
-            % (fname_gem_mapped, mapped, unmapped))
+            % (fname_mapped, mapped, unmapped))
    return
    # Done.
    
