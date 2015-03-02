@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import pdb
 
 
 from automata import PatternMatcher
@@ -14,6 +15,7 @@ from gzopen import gzopen
 from itertools import izip
 from math import sqrt
 from vtrack import vheader
+
 
 
 LOGFNAME = 'tripelog.txt'
@@ -207,7 +209,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
    rejecting multiple mapping integrations or unmmaped ones. It also
    counts the frequency that each barcode is found in the mapped data
    even for the non-mapping barcodes."""
-
+   
    KEEP = frozenset([
       '2L', '2LHet', '2R', '2RHet', '3L', '3LHet',
       '3R', '3RHet', '4', 'X', 'XHet', 'U', 'Uextra',
@@ -223,8 +225,8 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
    # Skip if file exists.
    if os.path.exists(fname_insertions_table): return
 
-   # Verbose information.
    sys.stderr.write('processing %s\n' % fname_insertions_table)
+   # Verbose information.
 
    def dist(intlist):
       intlist.sort()
@@ -233,14 +235,14 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
          return intlist[-1][1] - intlist[0][1]
       except IndexError:
          return float('inf')
-
+   
    canonical = dict()
    with open(fname_starcode_out) as f:
       for line in f:
          items = line.split()
          for brcd in items[2].split(','):
             canonical[brcd] = items[0]
-
+   #pdb.set_trace()
    counts = defaultdict(lambda: defaultdict(int))
    with open(fname_mapped) as f:
       for line in f:
@@ -281,7 +283,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
       outf.write(vheader(*sys.argv))
       unmapped = 0
       mapped = 0
-      for brcd in sorted(integrations, key=integrations.get):
+      for brcd in sorted(integrations, key=lambda x: (integrations.get(x),x)):
          try:
             (chrom,pos,strand),total = integrations[brcd]
             if chrom not in KEEP: raise ValueError
