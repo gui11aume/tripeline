@@ -300,7 +300,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
          (ignore,fname) = args[i]
          with open(fname) as f:
             for line in f:
-               items = line.split('\t')
+               items = line.rstrip().split('\t')
                array = ['0'] * N
                array[i] = items[1]
                outf.write('%s\tspike\t*\t0\t0\t' % items[0])
