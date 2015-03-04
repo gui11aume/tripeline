@@ -304,7 +304,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
             outf.write('\t' + str(reads[fname][brcd]))
          outf.write('\n')
 
-      # Now add the spikes.
+      # Now add the spikes if the experiment was spiked, otherwise continue.
       N = len(args)
       for i in range(N):
          (ignore,fname) = args[i]
