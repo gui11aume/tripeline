@@ -49,9 +49,6 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    # Skip if file exists.
    if os.path.exists(fname_fasta): return fname_fasta
     
-   # Verbose information.
-   sys.stderr.write('Extracting reads from %s\n' % fname_fasta)
-
    with gzopen(fname_iPCR_PE1) as f, gzopen(fname_iPCR_PE2) as g, \
       open(fname_fasta, 'w') as outf:
       # Aggregate iterator of f,g iterators -> izip(f,g).
@@ -87,9 +84,6 @@ def call_gem_mapper_on_fasta_file(fname_fasta):
    # Skip if file exists.
    if os.path.exists(outfname + '.map'): return outfname + '.map'
 
-   # Verbose information.
-   sys.stderr.write('Mapping %s\n' % outfname)
-    
    # TODO: specify version info for `gem-mapper`.
    # System call to `gem-mapper` passing the desired arguments.
    subprocess.call([
@@ -116,9 +110,6 @@ def call_starcode_on_mapped_file(fname_mapped):
 
    # Skip if file exists.
    if os.path.exists(fname_starcode): return fname_starcode
-
-   # Verbose information.
-   sys.stderr.write('Starcoding iPCR file: %s\n' % fname_starcode)
 
    # Create a pipe to make use of the `cut` command and pipe
    # it to starcode (git commit d4f63bd0cc5355d...).
@@ -154,10 +145,6 @@ def call_starcode_on_fastq_file(fname_fastq):
 
    if os.path.exists(brcd_outfname) and os.path.exists(spk_outfname):
       return (brcd_outfname, spk_outfname)
-
-   # Verbose information.
-   sys.stderr.write('Starcoding %s and %s\n' % \
-         (brcd_outfname, spk_outfname))
 
    GFP = PatternMatcher('CATGCTAGTTGTGGTTTGTCCAAACT', 3)
    SPIKE = PatternMatcher('CATGATTACCCTGTTATC', 2)
@@ -228,9 +215,6 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
    # Skip if file exists.
    if os.path.exists(fname_insertions_table): return
 
-   sys.stderr.write('processing %s\n' % fname_insertions_table)
-   # Verbose information.
-
    def dist(intlist):
       intlist.sort()
       try:
@@ -285,7 +269,6 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
             try:
                reads[fname][items[0]] = int(items[1])
             except (IndexError, ValueError) as ex:
-               sys.stderr.write("The Starcode file has wrong format\n")
                raise FormatException("Input file with wrong format")
    with open(fname_insertions_table, 'w') as outf:
       outf.write(vheader(*sys.argv))

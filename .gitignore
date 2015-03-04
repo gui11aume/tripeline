@@ -3,3 +3,5 @@
 *~
 *.o
 *.so
+testcase_insertions.txt
+tripelog.txt
