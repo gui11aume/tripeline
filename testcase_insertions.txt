@@ -1,0 +1,73 @@
+# call: test.py
+# platform: Linux rose 3.13.0-45-generic
+# directory: /home/mcorrales/ant-login/trip_droso/tripeline
+# user: mcorrales
+# date: 2015-03-04 10:40:20.144792
+# python version: 2.7.6.final.0
+# /home/mcorrales/ant-login/trip_droso/tripeline/test.py SHA1: 14366ac33a3eadc34999c1c279b52fcf76930d56
+# git error: test.py has been changed since last commit
+# #!/usr/bin/env python
+# 
+# import os
+# import unittest
+# import tripeline
+# import warnings
+# 
+# 
+# class TestCollectIntegrations(unittest.TestCase):
+#    def test_high_level(self):
+#       if os.path.exists('testcase_insertions.txt'):
+#          os.unlink('testcase_insertions.txt')
+#       tripeline.collect_integrations('testcase_starcode.txt','testcase.map',('testcase_gDNA_starcode.txt','testcase_gDNA_spikes_starcode.txt'),('testcase_cDNA_starcode.txt','testcase_cDNA_spikes_starcode.txt'))
+# 
+#                                      
+#       self.assertTrue(os.path.exists('testcase_insertions.txt'))
+#       with open('testcase_insertions.txt') as f:
+#          lines = [line for line in f if line[0] != '#']
+#       with open('testcase_expected.txt') as f:
+#          expected = f.readlines()
+#       self.assertEqual(len(lines), len(expected))
+#       for (line1, line2) in zip(lines, expected):
+#          self.assertEqual(line1, line2)
+# 
+#    def test_gDNA_handling(self):
+#       if os.path.exists('testcase_insertions.txt'):
+#          os.unlink('testcase_insertions.txt')
+#       tripeline.collect_integrations('testcase_starcode.txt',
+#       'testcase.map',('testcase_gDNA_starcode.txt','testcase_gDNA_spikes_starcode.txt'),('testcase_cDNA_starcode.txt','testcase_cDNA_spikes_starcode.txt'))
+#       
+#       self.assertTrue(os.path.exists('testcase_insertions.txt'))
+#       with open('testcase_insertions.txt') as f:
+#          lines = [line for line in f if line[0] != '#']
+#       with open('testcase_expected.txt') as f:
+#          expected = f.readlines()
+#       self.assertEqual(len(lines), len(expected))
+#       for (line1, line2) in zip(lines, expected):
+#          self.assertEqual(line1, line2)
+# 
+#    def test_file_format(self):
+#       if os.path.exists('testcase_insertions.txt'):
+#          os.unlink('testcase_insertions.txt')
+#       with self.assertRaises(tripeline.FormatException) as cm:
+#          tripeline.collect_integrations('testcase_starcode.txt','testcase.map',('testcase_gDNA_wformat_starcode.txt','testcase_gDNA_spikes_starcode.txt'),('testcase_cDNA_starcode.txt','testcase_cDNA_spikes_starcode.txt'))
+#       self.assertEqual(str(cm.exception),"Input file with wrong format")
+#       
+#        #os.unlink('testcase_insertions.txt')
+# 
+#       with self.assertRaises(tripeline.FormatException) as cm:
+#          tripeline.collect_integrations('testcase_starcode.txt','testcase.map',('testcase_gDNA_wformat2_starcode.txt','testcase_gDNA_spikes_starcode.txt'),('testcase_cDNA_starcode.txt','testcase_cDNA_spikes_starcode.txt'))
+#       self.assertEqual(str(cm.exception),"Input file with wrong format")
+# 
+#       
+# if __name__ == '__main__':
+#     unittest.main()
+# 
+# 
+TCGCATTCAAGCGTCTCTGG	2L	-	16332436	2	1	1
+TTGACTAGCGATACTAGTGG	3L	-	846890	2	1	1
+GGGGGCTACAGTGGACGGGG	3R	-	7485258	7	1	1
+ACATAAGGTACTGGACTCGT	3R	+	17422872	2	2	1
+ATTAGGCCACCAGGACTCAA	pT2	+	522	2	1	1
+CAACGCACACAGTCGATTTA	pT2	+	522	2	1	1
+CGAAAAGCATAAACTGGGTG	pT2	+	522	2	1	1
+NGCTGCGTGTACAACGTCTA	pT2	+	522	2	1	1

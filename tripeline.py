@@ -20,6 +20,9 @@ from vtrack import vheader
 
 LOGFNAME = 'tripelog.txt'
 
+class FormatException(Exception):
+   pass
+
 ########  Mapping Pipeline ###############################################
 
 def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
@@ -271,14 +274,19 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
        integrations[brcd] = (ins, total)
 
    # Count reads from other files.
+   #pdb.set_trace()
    reads = dict()
+   # First item of tuple is barcode file, second is the spike's one
    for (fname,ignore) in args:
       reads[fname] = defaultdict(int)
       with open(fname) as f:
          for line in f:
             items = line.split('\t')
-            reads[fname][items[0]] = int(items[1])
-
+            try:
+               reads[fname][items[0]] = int(items[1])
+            except (IndexError, ValueError) as ex:
+               sys.stderr.write("The Starcode file has wrong format\n")
+               raise FormatException("Input file with wrong format")
    with open(fname_insertions_table, 'w') as outf:
       outf.write(vheader(*sys.argv))
       unmapped = 0
@@ -302,12 +310,14 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
          (ignore,fname) = args[i]
          with open(fname) as f:
             for line in f:
-               items = line.rstrip().split('\t')
-               array = ['0'] * N
-               array[i] = items[1]
-               outf.write('%s\tspike\t*\t0\t0\t' % items[0])
-               outf.write('\t'.join(array) + '\n')
-
+               try:
+                  items = line.rstrip().split('\t')
+                  array = ['0'] * N
+                  array[i] = items[1]
+                  outf.write('%s\tspike\t*\t0\t0\t' % items[0])
+                  outf.write('\t'.join(array) + '\n')
+               except IndexError:
+                  continue
    with open(LOGFNAME, 'a') as f:
       f.write('%s: mapped:%d, unmapped:%d\n' \
             % (fname_mapped, mapped, unmapped))
