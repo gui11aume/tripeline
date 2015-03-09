@@ -44,8 +44,6 @@ class TestCollectIntegrations(unittest.TestCase):
          tripeline.collect_integrations('testcase_starcode.txt','testcase.map',('testcase_gDNA_wformat_starcode.txt','testcase_gDNA_spikes_starcode.txt'),('testcase_cDNA_starcode.txt','testcase_cDNA_spikes_starcode.txt'))
       self.assertEqual(str(cm.exception),"Input file with wrong format")
       
-       #os.unlink('testcase_insertions.txt')
-
       with self.assertRaises(tripeline.FormatException) as cm:
          tripeline.collect_integrations('testcase_starcode.txt','testcase.map',('testcase_gDNA_wformat2_starcode.txt','testcase_gDNA_spikes_starcode.txt'),('testcase_cDNA_starcode.txt','testcase_cDNA_spikes_starcode.txt'))
       self.assertEqual(str(cm.exception),"Input file with wrong format")
