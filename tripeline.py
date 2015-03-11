@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+# Standard library packages.
 import os
 import re
 import subprocess
 import sys
 import tempfile
-import pdb
 
-
-from automata import PatternMatcher
 from collections import defaultdict
-from gzopen import gzopen
 from itertools import izip
-from math import sqrt
+
+# Others.
+import seeq
+
+from gzopen import gzopen
 from vtrack import vheader
 
 
@@ -36,12 +37,13 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    # The known parts of the sequences are matched with a Levenshtein
    # automaton. On the reverse read, the end of the transposon
    # corresponds to a 34 bp sequence ending as shown below. We allow
-   # up to 3 mismatches/indels. On the forward read, the only known
+   # up to 5 mismatches/indels. On the forward read, the only known
    # sequence is the CATG after the barcode, which is matched exactly.
-   TRANSPOSON = PatternMatcher('TGTATGTAAACTTCCGACTTCAACTGTA', 3)
+   TRANSPOSON = seeq.compile('TGTATGTAAACTTCCGACTTCAACTGTA', 5)
 
    # Open a file to write
-   fname_fasta = re.sub(r'read[1-2].fastq(\.gz)?', 'iPCR.fasta',fname_iPCR_PE1)
+   fname_fasta = re.sub(r'read[1-2].fastq(\.gz)?', 'iPCR.fasta',
+         fname_iPCR_PE1)
    # Substitution failed, append '.fasta' to avoid name collision.
    if fname_fasta == fname_iPCR_PE1:
       fname_fasta = fname_iPCR_PE1 + '.fasta'
@@ -61,11 +63,12 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
          brcd = line1.rstrip().split('CATG')[0]
          if not MIN_BRCD < len(brcd) < MAX_BRCD: continue
          # Use a Levenshtein automaton to find the transpsoson.
-         gpos = TRANSPOSON.end(line2)
-         if gpos < 0: continue
+         genhit = TRANSPOSON.find(line2)
+         if genhit is None: continue
          # Select the region from the end of the transposon to
          # the first "CATG", if any.
-         genome = line2[(gpos+1):].split('CATG')[0].rstrip()
+         genpos = genhit.matchlist[0][2]
+         genome = line2[genpos:].split('CATG')[0].rstrip()
          if len(genome) < MIN_GENOME: continue
          outf.write('>%s\n%s\n' % (brcd,genome))
 
@@ -229,7 +232,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
          items = line.split()
          for brcd in items[2].split(','):
             canonical[brcd] = items[0]
-   #pdb.set_trace()
+
    counts = defaultdict(lambda: defaultdict(int))
    with open(fname_mapped) as f:
       for line in f:
@@ -258,7 +261,6 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
        integrations[brcd] = (ins, total)
 
    # Count reads from other files.
-   #pdb.set_trace()
    reads = dict()
    # First item of tuple is barcode file, second is the spike's one
    for (fname,ignore) in args:
