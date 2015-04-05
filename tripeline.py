@@ -17,8 +17,6 @@ import seeq
 from gzopen import gzopen
 from vtrack import vheader
 
-
-
 LOGFNAME = 'tripelog.txt'
 
 class FormatException(Exception):
@@ -39,7 +37,7 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    # corresponds to a 34 bp sequence ending as shown below. We allow
    # up to 5 mismatches/indels. On the forward read, the only known
    # sequence is the CATG after the barcode, which is matched exactly.
-   TRANSPOSON = seeq.compile('TGTATGTAAACTTCCGACTTCAACTGTA', 5)
+   pT2 = seeq.compile('TGTATGTAAACTTCCGACTTCAACTGTA', 5)
 
    # Open a file to write
    fname_fasta = re.sub(r'read[1-2].fastq(\.gz)?', 'iPCR.fasta',
@@ -63,12 +61,11 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
          brcd = line1.rstrip().split('CATG')[0]
          if not MIN_BRCD < len(brcd) < MAX_BRCD: continue
          # Use a Levenshtein automaton to find the transpsoson.
-         genhit = TRANSPOSON.find(line2)
-         if genhit is None: continue
+         genome = pT2.trimPrefix(line2, False)
+         if not genome: continue
          # Select the region from the end of the transposon to
          # the first "CATG", if any.
-         genpos = genhit.matchlist[0][2]
-         genome = line2[genpos:].split('CATG')[0].rstrip()
+         genome = genome.split('CATG')[0].rstrip()
          if len(genome) < MIN_GENOME: continue
          outf.write('>%s\n%s\n' % (brcd,genome))
 
@@ -149,23 +146,24 @@ def call_starcode_on_fastq_file(fname_fastq):
    if os.path.exists(brcd_outfname) and os.path.exists(spk_outfname):
       return (brcd_outfname, spk_outfname)
 
-   GFP = PatternMatcher('CATGCTAGTTGTGGTTTGTCCAAACT', 3)
-   SPIKE = PatternMatcher('CATGATTACCCTGTTATC', 2)
+   GFP = seeq.compile('CATGCTAGTTGTGGTTTGTCCAAACT', 4)
+   SPIKE = seeq.compile('CATGATTACCCTGTTATC', 2)
    barcode_tempf = tempfile.NamedTemporaryFile(delete=False)
    spike_tempf = tempfile.NamedTemporaryFile(delete=False)
    with gzopen(fname_fastq) as f:
       outf = None
       for lineno,line in enumerate(f):
          if lineno % 4 != 1: continue
-         pos = GFP.start(line)
-         if pos > -1:
+         hit = GFP.match(line)
+         if hit is not None:
             outf = barcode_tempf
          else:
-            pos = SPIKE.start(line)
-            if pos > -1:
+            hit = SPIKE.match(line)
+            if hit is not None:
                outf = spike_tempf
             else:
                continue
+         pos = hit.matchlist[0][0]
          if MIN_BRCD <= pos <= MAX_BRCD:
             outf.write(line[:pos] + '\n')
    barcode_tempf.close()
