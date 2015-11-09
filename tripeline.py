@@ -61,7 +61,7 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
          brcd = line1.rstrip().split('CATG')[0]
          if not MIN_BRCD < len(brcd) < MAX_BRCD: continue
          # Use a Levenshtein automaton to find the transpsoson.
-         genome = pT2.trimPrefix(line2, False)
+         genome = pT2.matchSuffix(line2, False)
          if not genome: continue
          # Select the region from the end of the transposon to
          # the first "CATG", if any.
