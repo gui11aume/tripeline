@@ -72,22 +72,24 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    return fname_fasta
 
 
-def call_gem_mapper_on_fasta_file(fname_fasta):
+def call_bwa_mapper_on_fasta_file(fname_fasta):
    """This function takes the barcodes and sequence extracted from the
-   PE sequencing files and calls gem to do the mapping with up to 3
-   mismatches and using 4 threads to align."""
+   PE sequencing files and calls bwa-mem to do the mapping with default 
+   settings to the Drosophila R6 reference genome"""
+   
+   
 
-   INDEX = '/mnt/shared/seq/gem/dm3R5/dm3R5_pT2_unmasked.gem'
+   INDEX = '/mnt/shared/seq/bwa/dm4R6/dmel-all-chromosome-r6.04.fasta'
 
    outfname = re.sub('\.fasta$', '', fname_fasta)
 
    # Skip if file exists.
-   if os.path.exists(outfname + '.map'): return outfname + '.map'
+   if os.path.exists(outfname + '.sam'): return outfname + '.sam'
 
-   # TODO: specify version info for `gem-mapper`.
-   # System call to `gem-mapper` passing the desired arguments.
+   
+   # System call to `bwa mem` passing the desired arguments.
    subprocess.call([
-       'gem-mapper',
+       'bwa mem',
        '-I', INDEX ,
        '-i', fname_fasta,
        '-o', outfname,
