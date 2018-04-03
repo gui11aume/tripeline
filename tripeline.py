@@ -3,7 +3,6 @@
 
 # Standard library packages.
 import os
-import pdb
 import re
 import subprocess
 import sys
@@ -20,8 +19,6 @@ from vtrack import vheader
 
 LOGFNAME = 'tripelog.txt'
 
-class FormatException(Exception):
-   pass
 
 ########  Mapping Pipeline ###############################################
 
@@ -82,7 +79,7 @@ def call_bwa_mapper_on_fasta_file(fname_fasta):
 
    INDEX = '/mnt/shared/seq/bwa/dm4R6/dmel-all-chromosome-r6.15.fasta'
 
-   outfname_mapped = re.sub(r'\.fasta', '.sam', fname_fasta)  
+   outfname_mapped = re.sub(r'\.fasta', '.sam', fname_fasta)  n
 
    # Skip if file exists.
    if os.path.exists(outfname_mapped): return outfname_mapped
@@ -98,7 +95,9 @@ def call_bwa_mapper_on_fasta_file(fname_fasta):
    return outfname_mapped
 
 def filter_mapped_reads(fname_mapped):
-   
+   """ This fuctions extracts the barcodes from the mapped file to feed 
+   them to starcode"""
+
    outfname_filtered = re.sub(r'\.sam', '_filtered.txt', fname_mapped)  
 
    # Skip if file exists.
@@ -118,6 +117,7 @@ def call_starcode_on_filtered_file(fname_filtered):
    the mapped file and feed's them to starcode that clusters them."""
 
    fname_starcode = re.sub(r'_filtered.txt', '_starcode.txt', fname_filtered)
+
    # Substitution failed, append '_starcode.txt' to avoid name collision.
    if fname_filtered == fname_starcode:
       fname_starcode = fname_filtered + '_starcode.txt'
@@ -143,6 +143,9 @@ def call_starcode_on_filtered_file(fname_filtered):
    if stderrdata is not None:
       sys.stderr.write("Pipe error (%s)\n" % str(stderrdata))
    return fname_starcode
+
+
+########  Counting reads in gDNA and cDNA  ###############################
 
 
 def call_starcode_on_fastq_file(fname_fastq):
@@ -206,6 +209,8 @@ def call_starcode_on_fastq_file(fname_fastq):
    os.unlink(spike_tempf.name)
 
    return (brcd_outfname, spk_outfname)
+
+########  Generate expression table #######################################
 
 
 def collect_integrations(fname_starcode_out, fname_mapped, *args):
