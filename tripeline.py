@@ -3,6 +3,7 @@
 
 # Standard library packages.
 import os
+import pdb
 import re
 import subprocess
 import sys
@@ -40,8 +41,8 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
    pT2 = seeq.compile('TGTATGTAAACTTCCGACTTCAACTGTA', 5)
 
    # Open a file to write
-   fname_fasta = re.sub(r'read[1-2].fastq(\.gz)?', 'iPCR.fasta',
-         fname_iPCR_PE1)
+   fname_fasta = re.sub(r'[\_F][w\_].fastq(\.gz)?', 'iPCR.fasta', fname_iPCR_PE1)
+   
    # Substitution failed, append '.fasta' to avoid name collision.
    if fname_fasta == fname_iPCR_PE1:
       fname_fasta = fname_iPCR_PE1 + '.fasta'
@@ -76,46 +77,57 @@ def call_bwa_mapper_on_fasta_file(fname_fasta):
    """This function takes the barcodes and sequence extracted from the
    PE sequencing files and calls bwa-mem to do the mapping with default 
    settings to the Drosophila R6 reference genome"""
-   
+
    
 
-   INDEX = '/mnt/shared/seq/bwa/dm4R6/dmel-all-chromosome-r6.04.fasta'
+   INDEX = '/mnt/shared/seq/bwa/dm4R6/dmel-all-chromosome-r6.15.fasta'
 
-   outfname = re.sub('\.fasta$', '', fname_fasta)
+   outfname_mapped = re.sub(r'\.fasta', '.sam', fname_fasta)  
 
    # Skip if file exists.
-   if os.path.exists(outfname + '.sam'): return outfname + '.sam'
+   if os.path.exists(outfname_mapped): return outfname_mapped
 
    
-   # System call to `bwa mem` passing the desired arguments.
-   subprocess.call([
-       'bwa mem',
-       '-I', INDEX ,
-       '-i', fname_fasta,
-       '-o', outfname,
-       '-m3',
-       '-T4',
-       '--unique-mapping',
-   ])
-   # gem-mapper adds `.map` to the output file.
-   return outfname + '.map'
-    
+   # System call to `bwa mem` passing the desired arguments and gather the exit code.
+   with open(outfname_mapped,'w') as f:
+      map_process = subprocess.Popen(['bwa', 'mem', '-t4', INDEX, fname_fasta],
+                                     stdout=f).wait()
+      if int(map_process) < 0:
+         sys.stderr.write("Error during the mapping\n")
+         
+   return outfname_mapped
 
-def call_starcode_on_mapped_file(fname_mapped):
+def filter_mapped_reads(fname_mapped):
+   
+   outfname_filtered = re.sub(r'\.sam', '_filtered.txt', fname_mapped)  
+
+   # Skip if file exists.
+   if os.path.exists(outfname_filtered): return outfname_filtered
+   
+   with open(fname_mapped) as f, open(outfname_filtered, 'w') as g:
+      for line in f:
+         if line[0] == '@': continue # Get rid of header
+         items = line.split() 
+         #if items[1] == '*': continue # Get rid of unmapped
+         g.write('%s\n' % items[0])
+
+   return outfname_filtered
+
+def call_starcode_on_filtered_file(fname_filtered):
    """This function takes the barcodes contained in the first column of
    the mapped file and feed's them to starcode that clusters them."""
 
-   fname_starcode = re.sub(r'\.map$', '_starcode.txt', fname_mapped)
+   fname_starcode = re.sub(r'_filtered.txt', '_starcode.txt', fname_filtered)
    # Substitution failed, append '_starcode.txt' to avoid name collision.
-   if fname_mapped == fname_starcode:
-      fname_starcode = fname_mapped + '_starcode.txt'
+   if fname_filtered == fname_starcode:
+      fname_starcode = fname_filtered + '_starcode.txt'
 
    # Skip if file exists.
    if os.path.exists(fname_starcode): return fname_starcode
 
    # Create a pipe to make use of the `cut` command and pipe
    # it to starcode (git commit d4f63bd0cc5355d...).
-   p1 = subprocess.Popen(['cut', '-f1', fname_mapped],
+   p1 = subprocess.Popen(['cut', '-f1', fname_filtered],
          stdout=subprocess.PIPE)
    p2 = subprocess.Popen([
       'starcode',
@@ -197,19 +209,14 @@ def call_starcode_on_fastq_file(fname_fastq):
 
 
 def collect_integrations(fname_starcode_out, fname_mapped, *args):
-   """This function reads the stacode output and changes all the barcodes
+   """This function reads the starcode output and changes all the barcodes
    mapped by their canonicals while it calculates the mapped distance
    rejecting multiple mapping integrations or unmmaped ones. It also
    counts the frequency that each barcode is found in the mapped data
    even for the non-mapping barcodes."""
    
-   KEEP = frozenset([
-      '2L', '2LHet', '2R', '2RHet', '3L', '3LHet',
-      '3R', '3RHet', '4', 'X', 'XHet', 'U', 'Uextra',
-      'dmel_mitochondrion_genome', 'pT2',
-   ])
 
-   fname_insertions_table = re.sub(r'\.map', '_insertions.txt',
+   fname_insertions_table = re.sub(r'\.sam', '_insertions.txt',
           fname_mapped)
    # Substitution failed, append '_insertions.txt' to avoid name conflict.
    if fname_insertions_table == fname_mapped:
@@ -232,22 +239,25 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
          items = line.split()
          for brcd in items[2].split(','):
             canonical[brcd] = items[0]
-
+   
    counts = defaultdict(lambda: defaultdict(int))
+   ISREV = 0b10000
    with open(fname_mapped) as f:
       for line in f:
+         if line[0] == '@': continue
          items = line.split()
          try:
             barcode = canonical[items[0]]
          except KeyError:
             continue
-         if items[3] == '-':
+         if items[2] == '*':
             position = ('', 0)
          else:
-            pos = items[3].split(':')
-            loc = int(pos[2]) if pos[1] == '+' else \
-                  int(pos[2]) + len(items[1])
-            position = (pos[0], loc, pos[1])
+            # GTTACATCGGTTAATAGATA 16  2L  9743332 60  9S32M [...] 
+            strand = '-' if int(items[1]) & ISREV else '+'
+            chrom = items[2] 
+            pos = int(items[3])
+            position = (chrom, pos, strand)
          counts[barcode][position] += 1
       
    integrations = dict()
@@ -277,12 +287,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
       unmapped = 0
       mapped = 0
       for brcd in sorted(integrations, key=lambda x: (integrations.get(x),x)):
-         try:
-            (chrom,pos,strand),total = integrations[brcd]
-            if chrom not in KEEP: raise ValueError
-         except ValueError:
-            unmapped += 1
-            continue
+         (chrom,pos,strand),total = integrations[brcd]
          mapped += 1
          outf.write('%s\t%s\t%s\t%d\t%d' % (brcd,chrom,strand,pos,total))
          for fname,ignore in args:
@@ -312,8 +317,9 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
 
 def main(fname_fastq1, fname_fastq2, *args):
    fname_fasta = extract_reads_from_PE_fastq(fname_fastq1, fname_fastq2)
-   fname_mapped = call_gem_mapper_on_fasta_file(fname_fasta)
-   fname_starcode = call_starcode_on_mapped_file(fname_mapped)
+   fname_mapped = call_bwa_mapper_on_fasta_file(fname_fasta)
+   fname_filtered = filter_mapped_reads(fname_mapped) 
+   fname_starcode = call_starcode_on_filtered_file(fname_filtered)
    fnames_extra = [call_starcode_on_fastq_file(fname) for fname in args]
    collect_integrations(fname_starcode, fname_mapped, *fnames_extra)
 
