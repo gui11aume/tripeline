@@ -20,6 +20,9 @@ from vtrack import vheader
 LOGFNAME = 'tripelog.txt'
 
 
+class FormatException(Exception):
+   pass
+
 ########  Mapping Pipeline ###############################################
 
 def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
