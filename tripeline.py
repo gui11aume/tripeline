@@ -82,13 +82,14 @@ def call_bwa_mapper_on_fasta_file(fname_fasta):
 
    INDEX = '/mnt/shared/seq/bwa/dm4R6/dmel-all-chromosome-r6.15.fasta'
 
-   outfname_mapped = re.sub(r'\.fasta', '.sam', fname_fasta)  n
+   outfname_mapped = re.sub(r'\.fasta', '.sam', fname_fasta)  
 
    # Skip if file exists.
    if os.path.exists(outfname_mapped): return outfname_mapped
 
    
-   # System call to `bwa mem` passing the desired arguments and gather the exit code.
+   # System call to `bwa mem` passing the desired arguments
+   # and gathering the exit code.
    with open(outfname_mapped,'w') as f:
       map_process = subprocess.Popen(['bwa', 'mem', '-t4', INDEX, fname_fasta],
                                      stdout=f).wait()
