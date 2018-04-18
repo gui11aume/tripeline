@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 # Standard library packages.
+import pdb
 import os
 import re
 import subprocess
@@ -68,7 +69,7 @@ def extract_reads_from_PE_fastq(fname_iPCR_PE1, fname_iPCR_PE2):
          # the first "CATG", if any.
          genome = genome.split('CATG')[0].rstrip()
          if len(genome) < MIN_GENOME: continue
-         outf.write('>%s\n%s\n' % (brcd,genome))
+         outf.write('>%s\n%s\n' % (brcd, genome))
 
    return fname_fasta
 
@@ -78,11 +79,10 @@ def call_bwa_mapper_on_fasta_file(fname_fasta):
    PE sequencing files and calls bwa-mem to do the mapping with default 
    settings to the Drosophila R6 reference genome"""
 
-   
 
    INDEX = '/mnt/shared/seq/bwa/dm4R6/dmel-all-chromosome-r6.15.fasta'
 
-   outfname_mapped = re.sub(r'\.fasta', '.sam', fname_fasta)  
+   outfname_mapped = re.sub(r'\.fasta', '.sam', fname_fasta)
 
    # Skip if file exists.
    if os.path.exists(outfname_mapped): return outfname_mapped
@@ -110,8 +110,7 @@ def filter_mapped_reads(fname_mapped):
    with open(fname_mapped) as f, open(outfname_filtered, 'w') as g:
       for line in f:
          if line[0] == '@': continue # Get rid of header
-         items = line.split() 
-         #if items[1] == '*': continue # Get rid of unmapped
+         items = line.split()
          g.write('%s\n' % items[0])
 
    return outfname_filtered
@@ -223,7 +222,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
    rejecting multiple mapping integrations or unmmaped ones. It also
    counts the frequency that each barcode is found in the mapped data
    even for the non-mapping barcodes."""
-   
+
 
    fname_insertions_table = re.sub(r'\.sam', '_insertions.txt',
           fname_mapped)
@@ -251,6 +250,20 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
    
    counts = defaultdict(lambda: defaultdict(int))
    ISREV = 0b10000
+   # Y chromosome is allowed to make the pipeline Drosophila
+   # compliant but we work with Kc167 cells that are female.
+   # The centromere scaffolds are included for studies
+   # het vs. euchromatin expression.
+   KEEP = frozenset(["2L", "2R", "3L", "3R", "4",
+                     "X", "Y", "2Cen_mapped_Scaffold_10_D1684",
+                     "2Cen_mapped_Scaffold_43_D1668",
+                     "3Cen_mapped_Scaffold_1_D1896_D1895",
+                     "3Cen_mapped_Scaffold_27_D1777",
+                     "3Cen_mapped_Scaffold_31_D1643_D1653_D1791",
+                     "3Cen_mapped_Scaffold_36_D1605",
+                     "3Cen_mapped_Scaffold_41_D1641",
+                     "3Cen_mapped_Scaffold_50_D1686"])
+   
    with open(fname_mapped) as f:
       for line in f:
          if line[0] == '@': continue
@@ -260,11 +273,12 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
          except KeyError:
             continue
          if items[2] == '*':
-            position = ('', 0)
+            position = ('', 0, '')
          else:
             # GTTACATCGGTTAATAGATA 16  2L  9743332 60  9S32M [...] 
             strand = '-' if int(items[1]) & ISREV else '+'
-            chrom = items[2] 
+            chrom = items[2]
+            if chrom not in KEEP: continue
             pos = int(items[3])
             position = (chrom, pos, strand)
          counts[barcode][position] += 1
@@ -272,7 +286,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
    integrations = dict()
    for brcd,hist in counts.items():
        total = sum(hist.values())
-       top = [pos for pos,count in hist.items() \
+       top = [pos for pos,count in hist.items()
              if count > max(1, 0.1*total)]
        # Skip barcode in case of disagreement between top votes.
        if dist(top) > 10: continue
@@ -296,7 +310,7 @@ def collect_integrations(fname_starcode_out, fname_mapped, *args):
       unmapped = 0
       mapped = 0
       for brcd in sorted(integrations, key=lambda x: (integrations.get(x),x)):
-         (chrom,pos,strand),total = integrations[brcd]
+         (chrom, pos, strand),total = integrations[brcd]
          mapped += 1
          outf.write('%s\t%s\t%s\t%d\t%d' % (brcd,chrom,strand,pos,total))
          for fname,ignore in args:
